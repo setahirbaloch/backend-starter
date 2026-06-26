@@ -1,0 +1,51 @@
+{
+  "compilerOptions": {
+    /* Target & Module */
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+
+    /* Libraries */
+    "lib": ["ES2023"],
+
+    /* Strictness & Code Quality */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noImplicitAny": false,
+    "removeComments": true,
+
+    /* Interop & DX */
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+
+    /* Project Structure */
+    "rootDir": ".",
+    "outDir": "build",
+
+    /* Path Aliases */
+    "baseUrl": ".", 
+    "paths": {
+      "@src/*": ["src/*"],
+      "@config/*": ["src/config/*"],
+      "@errors/*": ["src/errors/*"],
+      "@middlewares/*": ["src/middlewares/*"],
+      "@types/*": ["src/types/*"],
+      "@utils/*": ["src/utils/*"],
+      "@schemas/*": ["src/schemas/*"],
+      "@modules/*": ["src/modules/*"],
+      "@generated/*": ["generated/prisma/*"]
+    }
+  },
+
+  "include": [
+    "src",
+    "scripts",
+    "hooks",
+    "infra",
+    "generated"
+  ],
+
+  "exclude": ["build", "node_modules"]
+}

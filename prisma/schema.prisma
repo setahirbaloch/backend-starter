@@ -1,0 +1,149 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// System Enums
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
+  DELETED
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum OtpStatus {
+  PENDING
+  VERIFIED
+  EXPIRED
+}
+
+enum OtpPurpose {
+  VERIFY_EMAIL
+  RESET_PASSWORD
+  CHANGE_EMAIL
+  VERIFY_DEVICE
+}
+
+model User {
+  id                  String            @id @default(uuid()) @db.Uuid
+  email               String            @unique @db.VarChar(255)
+  password            String            @db.VarChar(255)
+  role                UserRole          @default(USER)
+  status              UserStatus        @default(INACTIVE)
+  emailVerified       Boolean           @default(false)
+  emailVerifiedAt     DateTime?         @db.Timestamptz
+  lastLoginAt         DateTime?         @db.Timestamptz
+  failedLoginAttempts Int               @default(0)
+  lockedUntil         DateTime?         @db.Timestamptz
+  deletedAt           DateTime?         @db.Timestamptz
+  deletionReason      String?           @db.VarChar(500)
+  createdAt           DateTime          @default(now()) @db.Timestamptz
+  updatedAt           DateTime          @updatedAt @db.Timestamptz
+  otps                Otp[]
+  userProfile         UserProfile?
+  devices             DeviceSession[]
+  passwordHistory     PasswordHistory[]
+  loginAttempts       LoginAttempt[]
+
+  @@index([email])
+  @@index([status])
+  @@index([role, status])
+  @@index([deletedAt])
+  @@index([email, deletedAt])
+  @@index([id, deletedAt])
+  @@index([createdAt])
+  @@map("users")
+}
+
+model Otp {
+  id         String     @id @default(uuid()) @db.Uuid
+  userId     String     @db.Uuid
+  otpCode    String
+  status     OtpStatus  @default(PENDING)
+  purpose    OtpPurpose @default(VERIFY_EMAIL)
+  createdAt  DateTime   @default(now()) @db.Timestamptz
+  verifiedAt DateTime?  @db.Timestamptz
+  expiredAt  DateTime   @db.Timestamptz
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserProfile {
+  id          String  @id @default(uuid()) @db.Uuid
+  userId      String  @unique @db.Uuid
+  firstName   String?
+  lastName    String?
+  displayName String? @unique @db.VarChar(120)
+  bio         String? @db.VarChar(500)
+  avatarUrl   String? @db.Text
+
+  phone              String? @unique @db.VarChar(30)
+  whatsApp           String? @unique @db.VarChar(30)
+  isProfileCompleted Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DeviceSession {
+  id           String    @id @default(uuid()) @db.Uuid
+  userId       String    @db.Uuid
+  deviceId     String    @db.VarChar(255)
+  deviceName   String?   @db.VarChar(255)
+  deviceType   String?   @db.VarChar(100)
+  browser      String?   @db.VarChar(100)
+  os           String?   @db.VarChar(100)
+  ipAddress    String?   @db.VarChar(45)
+  userAgent    String?   @db.Text
+  isTrusted    Boolean   @default(false)
+  lastActiveAt DateTime  @default(now()) @db.Timestamptz
+  createdAt    DateTime  @default(now()) @db.Timestamptz
+  revokedAt    DateTime? @db.Timestamptz
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
+  @@index([userId, isTrusted])
+  @@map("device_sessions")
+}
+
+model LoginAttempt {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @db.Uuid
+  ipAddress     String?  @db.VarChar(45)
+  userAgent     String?  @db.Text
+  deviceId      String?  @db.VarChar(255)
+  successful    Boolean  @default(false)
+  failureReason String?  @db.VarChar(255)
+  createdAt     DateTime @default(now()) @db.Timestamptz
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@index([successful])
+  @@map("login_attempts")
+}
+
+model PasswordHistory {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String   @db.Uuid
+  passwordHash String   @db.VarChar(255)
+  createdAt    DateTime @default(now()) @db.Timestamptz
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([userId, createdAt])
+  @@map("password_history")
+}
