@@ -204,7 +204,7 @@ npm run dev
 The server will be available at:
 
 ```text
-http://localhost:8000
+http://localhost:5000
 ```
 
 Verify the installation:
@@ -262,7 +262,7 @@ Minimum required configuration:
 ```env
 NODE_ENV=development
 
-PORT=8000
+PORT=5000
 
 DATABASE_URL=
 
