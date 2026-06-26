@@ -18,7 +18,17 @@ const { generateToken, doubleCsrfProtection } = doubleCsrf({
       (req.headers['x-csrf-token'] as string) || req.body?._csrf || '',
    size: 32,
 })
-
+/*───────────────Public Routes (Skip CSRF)───────────────*/
+const PUBLIC_CSRF_PATHS = new Set([
+   '/health',
+   '/auth/csrf',
+   '/auth/signin',
+   '/auth/verify-device',
+   '/auth/verify-email',
+   '/auth/resend-verification',
+   '/auth/forgot-password',
+   '/auth/reset-password',
+])
 /*───────────────CSRF Validation Middleware───────────────*/
 export const csrfMiddleware = (
    req: Request,
@@ -31,20 +41,7 @@ export const csrfMiddleware = (
       return
    }
 
-   /*── Exact path-based skips (no startsWith) ──*/
-   const skipPaths = new Set([
-      '/health',
-      '/auth/csrf',
-      '/auth/signin',
-      '/auth/signout',
-      '/auth/refresh-access-token',
-      '/auth/resend-verification',
-      '/auth/verify-email',
-      '/auth/forgot-password',
-      '/auth/reset-password',
-   ])
-
-   if (skipPaths.has(req.path)) {
+   if (PUBLIC_CSRF_PATHS.has(req.path)) {
       console.log(`CSRF SKIPPING path: ${req.path}`, {
          requestId: req.headers['x-request-id'] || 'unknown',
          timestamp: Date.now(),
