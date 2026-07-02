@@ -9,9 +9,12 @@ const { generateToken, doubleCsrfProtection } = doubleCsrf({
    getSecret: () => env.cookies.KEYS.CSRF,
    cookieName: 'csrf_token', // Simple, valid cookie name
    cookieOptions: {
-      httpOnly: true, // Required for double-submit cookie
-      secure: true,
-      sameSite: 'none',
+      httpOnly: env.cookies.CONFIG.HTTP_ONLY,
+      secure: env.cookies.CONFIG.SECURE,
+      sameSite: env.cookies.CONFIG.SAME_SITE.toLowerCase() as
+         | 'lax'
+         | 'strict'
+         | 'none',
       maxAge: 24 * 60 * 60 * 1000,
    },
    getTokenFromRequest: (req: Request) =>
@@ -35,6 +38,11 @@ export const csrfMiddleware = (
    res: Response,
    next: NextFunction
 ): void => {
+   if (env.application.NODE_ENV === 'test') {
+      next()
+      return
+   }
+
    /*── Skip safe HTTP methods ──*/
    if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
       next()

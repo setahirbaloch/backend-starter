@@ -31,32 +31,19 @@ const smtpConfig: SmtpConfig = {
 }
 
 /*───────────────Create Mail Transporter───────────────*/
-const mailTransporter = nodemailer.createTransport(smtpConfig)
-
-/*───────────────Verify SMTP Connection───────────────*/
-/* Graceful SMTP connection verification - don't crash on failure */
-mailTransporter.verify().then(
-   () => {
-      console.log('SMTP server connection verified successfully')
-   },
-   (err) => {
-      /* Log error but don't throw - allow application to start */
-      /* Email sending will fail gracefully later if needed */
-      console.log(
-         'SMTP connection verification failed - emails may not work',
-         err,
-         {
-            host: env.smtp.HOST,
-            port: env.smtp.PORT,
-         }
-      )
-   }
-)
+const isTestEnvironment = env.application.NODE_ENV === 'test'
+const mailTransporter = isTestEnvironment
+   ? null
+   : nodemailer.createTransport(smtpConfig)
 
 /*───────────────Send Email───────────────*/
 export async function sendEmail(options: EmailOptions): Promise<void> {
+   if (isTestEnvironment) {
+      return
+   }
+
    try {
-      await mailTransporter.sendMail({
+      await mailTransporter!.sendMail({
          from: options.from ?? env.smtp.FROM_EMAIL,
          to: options.to,
          cc: options.cc,
@@ -81,8 +68,12 @@ export async function sendEmail(options: EmailOptions): Promise<void> {
 
 /*───────────────Verify Connection───────────────*/
 export async function verifyMailerConnection(): Promise<void> {
+   if (isTestEnvironment) {
+      return
+   }
+
    try {
-      await mailTransporter.verify()
+      await mailTransporter!.verify()
    } catch (_error) {
       throw internal(
          'Mailer verification failed',

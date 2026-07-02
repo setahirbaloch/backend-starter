@@ -13,6 +13,14 @@ import { EnvSchema } from './env.schema'
 
 dotenv.config({ path: '.env' })
 
+const getDatabaseUrl = (): string => {
+   if (process.env.TEST_DATABASE_URL) {
+      return process.env.TEST_DATABASE_URL
+   }
+
+   return process.env.DATABASE_URL ?? ''
+}
+
 const normalizeSmtpCredential = (key: string, value: string): string => {
    const trimmed = value.trim()
 
@@ -136,7 +144,10 @@ export const env: Env = deepFreeze({
    },
 
    database: {
-      DATABASE_URL: parseString({ key: 'DATABASE_URL' }),
+      DATABASE_URL: parseString({
+         key: 'DATABASE_URL',
+         fallback: getDatabaseUrl(),
+      }),
    },
 
    api: {

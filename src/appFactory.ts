@@ -75,6 +75,26 @@ const createApp = (): AppBootstrap => {
    /*───────────────Register API Routes───────────────*/
    app.use('/users', user_router)
    app.use('/auth', auth_router)
+
+   /*───────────────Register Global Error Handler───────────────*/
+   app.use(globalErrorHandler)
+
+   /*───────────────Capture Endpoint Not Found (must be after error handler)───────────────*/
+   app.use((req: Request, res: Response) => {
+      res.status(404).json({
+         status: 'error',
+         statusCode: 404,
+         error: {
+            code: 'NOT_FOUND',
+            message: 'Endpoint not found',
+            endpoint: req.originalUrl,
+            method: req.method,
+            timestamp: new Date().toISOString(),
+         },
+         requestId: req.headers['x-request-id']?.toString() ?? 'N/A',
+      })
+   })
+
    /*───────────────Server Startup───────────────*/
    let isStarted = false
    let isShuttingDown = false
@@ -89,25 +109,6 @@ const createApp = (): AppBootstrap => {
 
       /*───────────────Create Admin If not exist───────────────*/
       await createAdmin()
-
-      /*───────────────Register Global Error Handler───────────────*/
-      app.use(globalErrorHandler)
-
-      /*───────────────Capture Endpoint Not Found (must be after error handler)───────────────*/
-      app.use((req: Request, res: Response) => {
-         res.status(404).json({
-            status: 'error',
-            statusCode: 404,
-            error: {
-               code: 'NOT_FOUND',
-               message: 'Endpoint not found',
-               endpoint: req.originalUrl,
-               method: req.method,
-               timestamp: new Date().toISOString(),
-            },
-            requestId: req.headers['x-request-id']?.toString() ?? 'N/A',
-         })
-      })
 
       /*───────────────Listen Server───────────────*/
       const server = app.listen(port, () => {

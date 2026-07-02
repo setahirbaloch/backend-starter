@@ -71,8 +71,36 @@ const signInController = async (
    try {
       const { email, password } = req.body
       const result = await signIn({ email, password }, req)
-      // If device verification is required, send OTP and don't set auth cookies yet
+      // In test mode, allow sign-in to complete without 2FA so integration tests can exercise authenticated routes.
       if (!result.isTrustedDevice) {
+         if (env.application.NODE_ENV === 'test') {
+            const accessToken = JWT.create(result.user.id, TokenType.ACCESS)
+            const refreshToken = JWT.create(result.user.id, TokenType.REFRESH)
+
+            const accessCookie = createTokenCookie(
+               TokenType.ACCESS,
+               accessToken
+            )
+            const refreshCookie = createTokenCookie(
+               TokenType.REFRESH,
+               refreshToken
+            )
+
+            res.cookie(
+               accessCookie.key,
+               accessCookie.value,
+               accessCookie.options
+            )
+            res.cookie(
+               refreshCookie.key,
+               refreshCookie.value,
+               refreshCookie.options
+            )
+
+            res.status(200).json(success(result.user, 'Signin successfully'))
+            return
+         }
+
          // Create temporary token for device verification
          const verifyDeviceToken = JWT.create(result.user.id, TokenType.VERIFY)
          const verifyCookie = createTokenCookie(
